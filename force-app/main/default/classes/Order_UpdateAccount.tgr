@@ -1,0 +1,64 @@
+trigger Order_UpdateAccount on Order (after update) {
+    
+    // Empêche l'exécution récursive du trigger en utilisant une variable statique
+    if (TriggerHelper.isTriggerRunning) {
+        return;
+    }
+    TriggerHelper.isTriggerRunning = true;
+
+    // Étape 1 : Collecte les ID des comptes concernés et suivre les mises à jour du chiffre d'affaires
+    Set<Id> accountIds = new Set<Id>();
+    Map<Id, Decimal> accountRevenueMap = new Map<Id, Decimal>();
+
+    // Parcours des commandes mises à jour
+    for (Integer i = 0; i < Trigger.new.size(); i++) {
+        Order newOrder = Trigger.new[i];
+        Order oldOrder = Trigger.old[i];
+
+        // Vérifie si le statut de la commande est passé à Ordered et si un compte est associé
+        if (newOrder.Status == 'Ordered' && oldOrder.Status != 'Ordered' && newOrder.AccountId != null) {
+            accountIds.add(newOrder.AccountId);
+        }
+    }
+
+    // Étape 2 : Récupére les comptes associés aux commandes concernées
+    if (!accountIds.isEmpty()) {
+        Map<Id, Account> accountMap = new Map<Id, Account>(
+            [SELECT Id, Chiffre_d_affaire__c FROM Account WHERE Id IN :accountIds]
+        );
+
+        // Étape 3 : Met à jour le chiffre d'affaires des comptes concernés
+        for (Integer i = 0; i < Trigger.new.size(); i++) {
+            Order newOrder = Trigger.new[i];
+            Order oldOrder = Trigger.old[i];
+
+            // Vérifie si le statut est passé à "Ordered" et si un compte est associé
+            if (newOrder.Status == 'Ordered' && oldOrder.Status != 'Ordered' && newOrder.AccountId != null) {
+                if (accountMap.containsKey(newOrder.AccountId)) {
+                    Account acc = accountMap.get(newOrder.AccountId);
+                    
+                    // Ajoute le montant de la commande au chiffre d'affaires existant (ou initialiser à 0 si null)
+                    acc.Chiffre_d_affaire__c = (acc.Chiffre_d_affaire__c != null ? acc.Chiffre_d_affaire__c : 0) + newOrder.TotalAmount;
+                    
+                    // Stocke la nouvelle valeur du chiffre d'affaires pour la mise à jour ultérieure
+                    accountRevenueMap.put(acc.Id, acc.Chiffre_d_affaire__c);
+                }
+            }
+        }
+
+        // Étape 4 : Effectue la mise à jour des comptes si des modifications ont été effectuées
+        if (!accountRevenueMap.isEmpty()) {
+            List<Account> accountsToUpdate = new List<Account>();
+            
+            for (Id accId : accountRevenueMap.keySet()) {
+                Account acc = new Account(Id = accId, Chiffre_d_affaire__c = accountRevenueMap.get(accId));
+                accountsToUpdate.add(acc);
+            }
+            
+            update accountsToUpdate; 
+        }
+    }
+
+    // Réinitialise le flag de récursion après exécution du trigger
+    TriggerHelper.isTriggerRunning = false;
+}
