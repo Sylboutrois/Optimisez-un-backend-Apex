@@ -1,0 +1,8 @@
+trigger Order_UpdateAccount on Order (after update) {
+    if (TriggerHelper.isTriggerRunning) return;
+    TriggerHelper.isTriggerRunning = true;
+
+    AccountRevenueService.updateRevenueFromOrders(Trigger.new, Trigger.old);
+
+    TriggerHelper.isTriggerRunning = false;
+}
