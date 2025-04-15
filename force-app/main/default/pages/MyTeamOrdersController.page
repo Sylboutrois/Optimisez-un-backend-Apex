@@ -1,0 +1,43 @@
+<apex:page controller="MyTeamOrdersController" lightningStylesheets="true">
+    <!-- Chargement du design Lightning -->
+    <apex:slds />
+
+    <div class="slds-scope slds-p-around_medium">
+        <!-- Titre principal -->
+        <h1 class="slds-text-heading_medium slds-m-bottom_medium">
+            Commandes au statut "Ordered"
+        </h1>
+
+        <!-- Total des commandes -->
+        <p class="slds-text-body_regular slds-m-bottom_small">
+            Total des commandes : 
+            <strong>
+                <apex:outputText value="{!SumOrders}" />
+            </strong>
+        </p>
+
+        <!-- Tableau des commandes -->
+        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+            <thead>
+                <tr>
+                    <th scope="col"><div class="slds-truncate">Numéro de commande</div></th>
+                    <th scope="col"><div class="slds-truncate">Commande prise par</div></th>
+                    <th scope="col"><div class="slds-truncate">Statut</div></th>
+                    <th scope="col"><div class="slds-truncate">Montant Net</div></th>
+                    <th scope="col"><div class="slds-truncate">Date de création</div></th>
+                </tr>
+            </thead>
+            <tbody>
+                <apex:repeat value="{!orders}" var="ord">
+                    <tr>
+                        <td><div class="slds-truncate">{!ord.OrderNumber}</div></td>
+                        <td><div class="slds-truncate">{!ord.Commande_prise_par__c}</div></td>
+                        <td><div class="slds-truncate">{!ord.Status}</div></td>
+                        <td><div class="slds-truncate">{!ord.NetAmount__c}</div></td>
+                        <td><div class="slds-truncate">{!ord.CreatedDate}</div></td>
+                    </tr>
+                </apex:repeat>
+            </tbody>
+        </table>
+    </div>
+</apex:page>
