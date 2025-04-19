@@ -1,0 +1,8 @@
+//Trigger de calcul du Montant Net d'une commande
+trigger Order_CalculNetAmount on Order (before update) {
+    for (Order newOrder : Trigger.new) {
+        if (newOrder.ShipmentCost__c != null) {
+            newOrder.Montant_Net__c = newOrder.TotalAmount - newOrder.ShipmentCost__c;
+        } 
+    }
+}
